@@ -351,6 +351,10 @@ if (workItems.length && previewImages.length) {
     workItems.forEach(it => it.classList.remove('is-active'));
     activeItem.classList.add('is-active');
 
+    // Update global state & dispatch event for custom cursor
+    window.currentActiveProjectIndex = idx;
+    document.dispatchEvent(new CustomEvent('projectchange', { detail: { index: idx } }));
+
     // Swap preview image & manage videos
     previewImages.forEach(img => {
       img.classList.remove('active');
@@ -676,7 +680,44 @@ if (contactSection) {
 
   window.addEventListener('resize', resizePhysics);
 
-  console.log('Physics Sandbox Initialized');
+  // ── PERFORMANCE: Pause physics when off-screen ──
+  let physicsActive = true;
+
+  ScrollTrigger.create({
+    trigger: canvas,
+    start: 'top bottom+=200',
+    end: 'bottom top-=200',
+    onEnter: () => {
+      if (!physicsActive) {
+        Runner.run(runner, engine);
+        Render.run(render);
+        physicsActive = true;
+      }
+    },
+    onEnterBack: () => {
+      if (!physicsActive) {
+        Runner.run(runner, engine);
+        Render.run(render);
+        physicsActive = true;
+      }
+    },
+    onLeave: () => {
+      if (physicsActive) {
+        Runner.stop(runner);
+        Render.stop(render);
+        physicsActive = false;
+      }
+    },
+    onLeaveBack: () => {
+      if (physicsActive) {
+        Runner.stop(runner);
+        Render.stop(render);
+        physicsActive = false;
+      }
+    },
+  });
+
+  console.log('Physics Sandbox Initialized (with visibility optimization)');
 })();
 
 // ── 8. CUSTOM INTERACTIVE CURSOR ──
@@ -722,23 +763,30 @@ if (contactSection) {
   let isHoveringWork = false;
 
   const cursorTextMap = {
-    "0": "Open Playful",
-    "1": "Visit Web Store",
-    "2": "Open Zenithe",
-    "3": "View Official Post",
-    "4": "View Certificate",
-    "5": "Visit Page",
-    "6": "Open Aethecraft Studios"
+    "0": "Swipe to Explore",
+    "1": "Open Playful",
+    "2": "Visit Web Store",
+    "3": "Open Zenithe",
+    "4": "View Official Post",
+    "5": "View Certificate",
+    "6": "Visit Page",
+    "7": "Open Aethecraft Studios"
   };
 
   const updateCursorText = () => {
     if (!isHoveringWork || !workSection) return;
-    const activeImg = workSection.querySelector('.work-preview-img.active');
-    if (activeImg) {
-      const idx = activeImg.getAttribute('data-index');
-      cursorText.textContent = cursorTextMap[idx] || "Open Project";
+    const idx = window.currentActiveProjectIndex || "0";
+    const targetText = cursorTextMap[idx] || "Open Project";
+    if (cursorText.textContent !== targetText) {
+      cursorText.textContent = targetText;
     }
   };
+
+  // Listen for active project changes to update cursor text instantly
+  document.addEventListener('projectchange', (e) => {
+    window.currentActiveProjectIndex = e.detail.index;
+    updateCursorText();
+  });
 
   const expandWorkCursor = () => {
     if (isHoveringWork) return;
@@ -778,37 +826,18 @@ if (contactSection) {
     workSection.style.cursor = 'none';
     workSection.addEventListener('mouseenter', expandWorkCursor);
     workSection.addEventListener('mouseleave', shrinkWorkCursor);
-    workSection.addEventListener('mousemove', updateCursorText);
 
     // Make the entire section clickable
     workSection.addEventListener('click', (e) => {
       if (e.target.closest('a') || e.target.closest('button')) return;
-      const activeImg = workSection.querySelector('.work-preview-img.active');
-      if (activeImg) {
-        const index = activeImg.getAttribute('data-index');
-        const correspondingItem = document.querySelector(`.work-item[data-index="${index}"]`);
-        if (correspondingItem) {
-          const link = correspondingItem.querySelector('h3 a');
-          if (link && link.href) window.open(link.href, '_blank');
-        }
+      const idx = window.currentActiveProjectIndex || "0";
+      const correspondingItem = document.querySelector(`.work-item[data-index="${idx}"]`);
+      if (correspondingItem) {
+        const link = correspondingItem.querySelector('h3 a');
+        if (link && link.href) window.open(link.href, '_blank');
       }
     });
   }
-
-  // Robust scroll fallback: guarantee cursor updates if user scrolls without moving mouse
-  window.addEventListener('scroll', () => {
-    if (!hasMoved) return;
-    const el = document.elementFromPoint(currentMouseX, currentMouseY);
-    if (el) {
-      const isInsideWork = el.closest('#work');
-      if (isInsideWork) {
-        expandWorkCursor();
-        updateCursorText();
-      } else {
-        shrinkWorkCursor();
-      }
-    }
-  }, { passive: true });
 
   // 2. Footer Name Hover (Pill with Text)
   const footerName = document.getElementById('footer-name');
@@ -888,4 +917,152 @@ if (contactSection) {
     });
   });
 
+})();
+
+// ─── 9. TINDER-STYLE CARD DECK ───
+
+(function () {
+  const decks = document.querySelectorAll('.card-deck-container');
+  
+  decks.forEach(deck => {
+    const cards = Array.from(deck.querySelectorAll('.deck-card'));
+    const hint = deck.querySelector('.deck-swipe-hint');
+    const totalCards = cards.length;
+    let isAnimating = false;
+
+    // Build a visual stack order (last element = top of stack visually)
+    let stack = [...cards]; // stack[stack.length-1] is the top card
+
+    // ── Position all cards in the stack ──
+    function layoutStack(animate) {
+      const dur = animate ? 0.4 : 0;
+      stack.forEach((card, i) => {
+        const distFromTop = (stack.length - 1) - i; // 0 = top card
+        const props = {
+          x: 0,
+          y: distFromTop * 14,
+          scale: 1 - distFromTop * 0.035,
+          rotation: 0,
+          opacity: 1,
+          zIndex: i + 1,
+          duration: dur,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        };
+
+        if (animate) {
+          gsap.to(card, props);
+        } else {
+          gsap.set(card, props);
+        }
+
+        // Update counter label
+        const label = card.querySelector('.deck-card-label');
+        if (label) {
+          label.textContent = `${distFromTop + 1} / ${totalCards}`;
+        }
+      });
+    }
+
+    // ── Get top card ──
+    function getTopCard() {
+      return stack[stack.length - 1];
+    }
+
+    // ── Swipe the top card out, then recycle it to the bottom ──
+    function swipeCard(direction) {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      const topCard = getTopCard();
+
+      // Hide hint on first interaction
+      if (hint) gsap.to(hint, { opacity: 0, duration: 0.3 });
+
+      const xTarget = direction === 'right' ? 800 : -800;
+      const rotTarget = direction === 'right' ? 15 : -15;
+
+      gsap.to(topCard, {
+        x: xTarget,
+        rotation: rotTarget,
+        opacity: 0,
+        duration: 0.45,
+        ease: 'power3.in',
+        onComplete: () => {
+          // Move this card from top of stack to bottom
+          stack.pop();
+          stack.unshift(topCard);
+
+          // Reset its position instantly (it's now at the bottom)
+          gsap.set(topCard, { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
+
+          // Re-layout the entire stack with animation
+          layoutStack(true);
+
+          isAnimating = false;
+        }
+      });
+    }
+
+    // ── Make each card draggable ──
+    cards.forEach(card => {
+      Draggable.create(card, {
+        type: 'x',
+        inertia: false,
+        cursor: 'grab',
+        activeCursor: 'grabbing',
+        zIndexBoost: false,
+
+        onPress: function () {
+          if (getTopCard() !== this.target || isAnimating) {
+            this.endDrag();
+            return;
+          }
+          gsap.to(this.target, {
+            boxShadow: '0 16px 56px rgba(26, 26, 26, 0.22), 0 6px 20px rgba(26, 26, 26, 0.12)',
+            scale: 1.02,
+            duration: 0.25,
+            ease: 'power2.out',
+          });
+        },
+
+        onDrag: function () {
+          if (getTopCard() !== this.target) return;
+          // Tilt based on drag distance
+          const rotation = this.x * 0.06;
+          gsap.set(this.target, { rotation: rotation });
+        },
+
+        onRelease: function () {
+          if (getTopCard() !== this.target) return;
+
+          const threshold = 100;
+
+          if (Math.abs(this.x) > threshold) {
+            // Swiped far enough — complete the swipe
+            const dir = this.x > 0 ? 'right' : 'left';
+            // Kill Draggable's inline transform first
+            gsap.set(this.target, { clearProps: 'boxShadow' });
+            swipeCard(dir);
+          } else {
+            // Snap back to center
+            gsap.to(this.target, {
+              x: 0,
+              rotation: 0,
+              scale: 1,
+              boxShadow: '0 4px 24px rgba(26, 26, 26, 0.10), 0 1px 6px rgba(26, 26, 26, 0.06)',
+              duration: 0.55,
+              ease: 'elastic.out(1, 0.55)',
+              overwrite: 'auto',
+            });
+          }
+        },
+      });
+    });
+
+    // Initial layout (no animation)
+    layoutStack(false);
+  });
+
+  console.log('Card Decks Initialized');
 })();

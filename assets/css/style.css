@@ -484,6 +484,100 @@ a {
   transform: rotate(-45deg) translate(4px, -4px);
 }
 
+/* ─── CARD DECK (Tinder-style) ─── */
+.card-deck-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.deck-card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background-size: cover;
+  background-position: center;
+  background-color: #EBE8E1;
+  box-shadow: 0 4px 24px rgba(26, 26, 26, 0.10), 0 1px 6px rgba(26, 26, 26, 0.06);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.deck-card:active {
+  cursor: grabbing;
+}
+
+.deck-card-label {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(26, 26, 26, 0.6);
+  padding: 5px 12px;
+  border-radius: 100px;
+  z-index: 2;
+}
+
+.deck-swipe-hint {
+  position: absolute;
+  bottom: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #B8B0A2;
+  animation: hint-pulse 2.5s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%); }
+  50% { opacity: 1; transform: translateX(calc(-50% + 4px)); }
+}
+
+/* ─── MOBILE HERO POLAROIDS ─── */
+.polaroid-mobile {
+  background: #fff;
+  padding: 6px 6px 22px 6px;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(26, 26, 26, 0.08), 0 1px 3px rgba(26, 26, 26, 0.05);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.polaroid-mobile img {
+  width: 100%;
+  height: 85px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+.polaroid-mobile span {
+  display: block;
+  text-align: center;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.55rem;
+  color: #8B7355;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+}
+
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
   .hero-name {
@@ -494,28 +588,46 @@ a {
     display: none;
   }
 
-  /* Hide bottom polaroids and squiggle on mobile to reduce clutter */
-  .draggable-item:nth-child(n+4) {
-    display: none;
+  /* Tighter section labels */
+  .section-label::before,
+  .section-label::after {
+    width: 16px;
   }
 
-  /* Reposition remaining elements for mobile */
-  .polaroid-card {
-    width: 100px;
-    padding: 5px 5px 18px 5px;
+  /* Work items - reduce vertical padding on mobile */
+  .work-item {
+    padding: 1.5rem 0;
   }
 
-  .polaroid-card img {
-    height: 70px;
+  .work-number {
+    margin-bottom: 0.6rem;
   }
 
-  .polaroid-caption {
-    font-size: 0.55rem;
-    margin-top: 5px;
+  /* Skill pills - smaller on mobile */
+  .skill-pill {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.9rem;
   }
 
-  .hero-sticker {
+  /* Project tags - smaller on mobile */
+  .project-tag {
     font-size: 0.6rem;
-    padding: 7px 14px;
+    padding: 0.25rem 0.6rem;
+  }
+
+  /* Experience items - tighter */
+  .exp-item {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  /* Mobile card deck styling */
+  .mobile-deck {
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto;
+    aspect-ratio: 14 / 10;
+    height: auto;
+    position: relative;
   }
 }
