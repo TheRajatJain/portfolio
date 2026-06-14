@@ -763,7 +763,7 @@ if (contactSection) {
   let isHoveringWork = false;
 
   const cursorTextMap = {
-    "0": "Swipe to Explore",
+    "0": "Drag cards to browse",
     "1": "Open Playful",
     "2": "Visit Web Store",
     "3": "Open Zenithe",
@@ -935,18 +935,21 @@ if (contactSection) {
 
     // ── Position all cards in the stack ──
     function layoutStack(animate) {
-      const dur = animate ? 0.4 : 0;
+      const dur = animate ? 0.45 : 0;
       stack.forEach((card, i) => {
         const distFromTop = (stack.length - 1) - i; // 0 = top card
+        // Alternating slight rotation for fan-out effect
+        const stackRotation = distFromTop > 0 ? (i % 2 === 0 ? 1.5 : -1.5) * distFromTop : 0;
+
         const props = {
           x: 0,
-          y: distFromTop * 14,
-          scale: 1 - distFromTop * 0.035,
-          rotation: 0,
+          y: distFromTop * 12,
+          scale: 1 - distFromTop * 0.04,
+          rotation: stackRotation,
           opacity: 1,
           zIndex: i + 1,
           duration: dur,
-          ease: 'power2.out',
+          ease: animate ? 'back.out(1.2)' : 'power2.out',
           overwrite: 'auto',
         };
 
@@ -970,7 +973,7 @@ if (contactSection) {
     }
 
     // ── Swipe the top card out, then recycle it to the bottom ──
-    function swipeCard(direction) {
+    function swipeCard(direction, velocityY) {
       if (isAnimating) return;
       isAnimating = true;
 
@@ -979,14 +982,16 @@ if (contactSection) {
       // Hide hint on first interaction
       if (hint) gsap.to(hint, { opacity: 0, duration: 0.3 });
 
-      const xTarget = direction === 'right' ? 800 : -800;
-      const rotTarget = direction === 'right' ? 15 : -15;
+      const xTarget = direction === 'right' ? 900 : -900;
+      const yTarget = velocityY ? velocityY * 0.55 : (Math.random() * 200 - 100);
+      const rotTarget = direction === 'right' ? 25 : -25;
 
       gsap.to(topCard, {
         x: xTarget,
+        y: yTarget,
         rotation: rotTarget,
         opacity: 0,
-        duration: 0.45,
+        duration: 0.5,
         ease: 'power3.in',
         onComplete: () => {
           // Move this card from top of stack to bottom
@@ -1007,7 +1012,7 @@ if (contactSection) {
     // ── Make each card draggable ──
     cards.forEach(card => {
       Draggable.create(card, {
-        type: 'x',
+        type: 'x,y',
         inertia: false,
         cursor: 'grab',
         activeCursor: 'grabbing',
@@ -1019,8 +1024,8 @@ if (contactSection) {
             return;
           }
           gsap.to(this.target, {
-            boxShadow: '0 16px 56px rgba(26, 26, 26, 0.22), 0 6px 20px rgba(26, 26, 26, 0.12)',
-            scale: 1.02,
+            boxShadow: '0 24px 60px rgba(26, 26, 26, 0.25), 0 10px 24px rgba(26, 26, 26, 0.12)',
+            scale: 1.04,
             duration: 0.25,
             ease: 'power2.out',
           });
@@ -1028,31 +1033,33 @@ if (contactSection) {
 
         onDrag: function () {
           if (getTopCard() !== this.target) return;
-          // Tilt based on drag distance
-          const rotation = this.x * 0.06;
+          // Tilt dynamically based on X and Y drag distance
+          const rotation = this.x * 0.07 + (this.y * 0.02);
           gsap.set(this.target, { rotation: rotation });
         },
 
         onRelease: function () {
           if (getTopCard() !== this.target) return;
 
-          const threshold = 100;
+          const thresholdX = 120;
 
-          if (Math.abs(this.x) > threshold) {
+          if (Math.abs(this.x) > thresholdX) {
             // Swiped far enough — complete the swipe
             const dir = this.x > 0 ? 'right' : 'left';
-            // Kill Draggable's inline transform first
+            const finalY = this.y;
+            // Clear inline shadow
             gsap.set(this.target, { clearProps: 'boxShadow' });
-            swipeCard(dir);
+            swipeCard(dir, finalY);
           } else {
-            // Snap back to center
+            // Snap back to center with spring effect
             gsap.to(this.target, {
               x: 0,
+              y: 0,
               rotation: 0,
               scale: 1,
               boxShadow: '0 4px 24px rgba(26, 26, 26, 0.10), 0 1px 6px rgba(26, 26, 26, 0.06)',
-              duration: 0.55,
-              ease: 'elastic.out(1, 0.55)',
+              duration: 0.65,
+              ease: 'elastic.out(1.1, 0.6)',
               overwrite: 'auto',
             });
           }

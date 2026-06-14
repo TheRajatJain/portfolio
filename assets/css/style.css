@@ -307,7 +307,6 @@ a {
   width: 100%;
   aspect-ratio: 14 / 10;
   border-radius: 16px;
-  overflow: hidden;
   box-shadow: 0 8px 40px rgba(26, 26, 26, 0.08), 0 2px 12px rgba(26, 26, 26, 0.04);
 }
 
@@ -319,10 +318,18 @@ a {
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.5s ease;
+  border-radius: 16px;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .work-preview-img.active {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.work-preview-img.card-deck-container {
+  overflow: visible;
 }
 
 .project-tag {
