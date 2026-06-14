@@ -765,12 +765,11 @@ if (contactSection) {
   const cursorTextMap = {
     "0": "Drag cards to browse",
     "1": "Open Playful",
-    "2": "Visit Web Store",
-    "3": "Open Zenithe",
-    "4": "View Official Post",
-    "5": "View Certificate",
-    "6": "Visit Page",
-    "7": "Open Aethecraft Studios"
+    "2": "Open Zenithe",
+    "3": "View Official Post",
+    "4": "View Certificate",
+    "5": "Visit Page",
+    "6": "Open Aethecraft Studios"
   };
 
   const updateCursorText = () => {
