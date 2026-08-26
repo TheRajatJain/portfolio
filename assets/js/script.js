@@ -196,6 +196,52 @@ heroTL
   }, '-=0.2');
 
 
+// ─── 5a. LOADING SCREEN ───
+
+const loader = document.getElementById('loader');
+
+if (loader) {
+  const loaderCounter = document.getElementById('loader-counter');
+  const loaderBar = document.getElementById('loader-bar');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Hold the hero entrance and page scroll until loading completes
+  heroTL.paused(true);
+  lenis.stop();
+
+  const loadProgress = { value: 0 };
+
+  const loaderTL = gsap.timeline({
+    onComplete: () => {
+      lenis.start();
+      heroTL.play();
+    }
+  });
+
+  // Count 0 → 100 with an eased fill
+  loaderTL.to(loadProgress, {
+    value: 100,
+    duration: reduceMotion ? 0.5 : 1.8,
+    ease: 'power2.inOut',
+    onUpdate: () => {
+      loaderCounter.textContent = Math.round(loadProgress.value);
+      loaderBar.style.transform = `scaleX(${loadProgress.value / 100})`;
+    }
+  });
+
+  if (reduceMotion) {
+    // Simple cross-fade, no curtain movement
+    loaderTL.to(loader, { autoAlpha: 0, duration: 0.4, ease: 'power2.out' });
+  } else {
+    loaderTL
+      .to('#loader-content', { y: -24, opacity: 0, duration: 0.35, ease: 'power2.in' }, '+=0.1')
+      .to(loader, { yPercent: -100, duration: 0.7, ease: 'power4.inOut' }, '-=0.05');
+  }
+
+  loaderTL.set(loader, { display: 'none' });
+}
+
+
 // ─── 5b. HERO PLAYGROUND - GSAP Draggable ───
 
 let topZIndex = 10;

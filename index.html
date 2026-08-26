@@ -74,9 +74,28 @@
       z-index: 9999;
     }
   </style>
+
+  <!-- Hide loader if JavaScript is unavailable -->
+  <noscript>
+    <style>#loader { display: none !important; }</style>
+  </noscript>
 </head>
 
 <body class="bg-cream text-charcoal font-sans antialiased overflow-x-hidden">
+
+  <!-- ═══ LOADING SCREEN ═══ -->
+  <div id="loader" class="fixed inset-0 z-[70] bg-cream flex items-center justify-center" role="status"
+    aria-label="Loading portfolio">
+    <div id="loader-content" class="flex flex-col items-center">
+      <span class="loader-label">Rajat Jain · Portfolio</span>
+      <div class="loader-counter" aria-hidden="true">
+        <span id="loader-counter">0</span><span class="percent">%</span>
+      </div>
+    </div>
+    <div class="loader-track" aria-hidden="true">
+      <div class="loader-bar" id="loader-bar"></div>
+    </div>
+  </div>
 
   <!-- ═══ NAV ═══ -->
   <nav id="nav" class="fixed top-0 left-0 w-full z-[60] transition-all duration-500">
